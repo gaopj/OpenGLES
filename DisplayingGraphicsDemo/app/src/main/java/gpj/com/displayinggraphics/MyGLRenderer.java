@@ -3,6 +3,7 @@ package gpj.com.displayinggraphics;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.Matrix;
+import android.os.SystemClock;
 import android.util.Log;
 
 import javax.microedition.khronos.egl.EGLConfig;
@@ -16,9 +17,13 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
     private Triangle mTriangle;
     private Square   mSquare;
 
+    private float[] mRotationMatrix = new float[16];
+
     @Override
     public void onDrawFrame(GL10 unused) {
         Log.d(TAG,"onDrawFrame");
+
+        float[] scratch = new float[16];
 
         // 重绘背景颜色
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
@@ -29,7 +34,16 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
         // 计算投影和视图转换
         Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mViewMatrix, 0);
 
-        mTriangle.draw(mMVPMatrix);
+        // 给三角形创建一个旋转变换
+        long time = SystemClock.uptimeMillis() % 4000L;
+        float angle = 0.090f * ((int) time);
+        Matrix.setRotateM(mRotationMatrix, 0, angle, 0, 0, -1.0f);
+
+        //将旋转矩阵与投影和摄像机视图结合时，mMVPMatrix因子必须在*前面才能使矩阵乘法乘积正确。
+        Matrix.multiplyMM(scratch, 0, mMVPMatrix, 0, mRotationMatrix, 0);
+
+       // mTriangle.draw(mMVPMatrix);
+        mTriangle.draw(scratch);
     }
 
     @Override
