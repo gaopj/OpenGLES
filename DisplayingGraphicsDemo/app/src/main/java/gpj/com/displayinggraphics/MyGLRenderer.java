@@ -2,6 +2,7 @@ package gpj.com.displayinggraphics;
 
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
+import android.opengl.Matrix;
 import android.util.Log;
 
 import javax.microedition.khronos.egl.EGLConfig;
@@ -22,7 +23,13 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
         // 重绘背景颜色
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
 
-        mTriangle.draw();
+        // 设置相机的位置 (View matrix)
+        Matrix.setLookAtM(mViewMatrix, 0, 0, 0, -3, 0f, 0f, 0f, 0f, 1.0f, 0.0f);
+
+        // 计算投影和视图转换
+        Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mViewMatrix, 0);
+
+        mTriangle.draw(mMVPMatrix);
     }
 
     @Override
@@ -44,6 +51,12 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
 
         GLES20.glViewport(0, 0, width, height);
 
+        float ratio = (float) width / height;
+
+        // 此投影矩阵应用于onDrawFrame（）方法中的对象坐标
+        Matrix.frustumM(mProjectionMatrix, 0, -ratio, ratio, -1, 1, 3, 7);
+
+
     }
 
     public static int loadShader(int type, String shaderCode){
@@ -58,4 +71,9 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
 
         return shader;
     }
+
+    // mMVPMatrix是“模型视图投影矩阵”(Model View Projection Matrix)的缩写
+    private final float[] mMVPMatrix = new float[16];
+    private final float[] mProjectionMatrix = new float[16];
+    private final float[] mViewMatrix = new float[16];
 }
