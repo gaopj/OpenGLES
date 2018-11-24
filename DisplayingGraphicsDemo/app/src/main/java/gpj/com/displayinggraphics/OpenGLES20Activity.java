@@ -13,8 +13,7 @@ public class OpenGLES20Activity extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Create a GLSurfaceView instance and set it
-        // as the ContentView for this Activity.
+        // 创建一个GLSurfaceView实例并将其设置为此Activity的ContentView。
         mGLView = new MyGLSurfaceView(this);
         setContentView(mGLView);
     }

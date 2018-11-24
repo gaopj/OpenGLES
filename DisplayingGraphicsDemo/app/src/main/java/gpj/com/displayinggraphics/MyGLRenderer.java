@@ -16,7 +16,7 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
     public void onDrawFrame(GL10 unused) {
         Log.d(TAG,"onDrawFrame");
 
-        // Redraw background color
+        // 重绘背景颜色
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
     }
 
@@ -24,7 +24,7 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
         Log.d(TAG,"onSurfaceCreated:"+config);
 
-        // Set the background frame color
+        // 设置背景框架颜色
         GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     }
 
