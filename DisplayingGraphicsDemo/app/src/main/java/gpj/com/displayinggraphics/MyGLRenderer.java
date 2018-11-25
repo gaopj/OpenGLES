@@ -42,8 +42,8 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
         //将旋转矩阵与投影和摄像机视图结合时，mMVPMatrix因子必须在*前面才能使矩阵乘法乘积正确。
         Matrix.multiplyMM(scratch, 0, mMVPMatrix, 0, mRotationMatrix, 0);
 
-       // mTriangle.draw(mMVPMatrix);
-        mTriangle.draw(scratch);
+        mTriangle.draw(mMVPMatrix);
+       // mTriangle.draw(scratch);
     }
 
     @Override
