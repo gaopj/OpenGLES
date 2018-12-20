@@ -34,16 +34,16 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
         Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mViewMatrix, 0);
 
         // 给三角形创建一个旋转变换
-        // long time = SystemClock.uptimeMillis() % 4000L;
-        // float angle = 0.090f * ((int) time);
-        //Matrix.setRotateM(mRotationMatrix, 0, angle, 0, 0, -1.0f);
+//         long time = SystemClock.uptimeMillis() % 4000L;
+//         float angle = 0.090f * ((int) time);
+//        Matrix.setRotateM(mRotationMatrix, 0, angle, 0, 0, -1.0f);
         Matrix.setRotateM(mRotationMatrix, 0, mAngle, 0, 0, -1.0f);
 
         //将旋转矩阵与投影和摄像机视图结合时，mMVPMatrix因子必须在*前面才能使矩阵乘法乘积正确。
         Matrix.multiplyMM(scratch, 0, mMVPMatrix, 0, mRotationMatrix, 0);
 
-        mTriangle.draw(mMVPMatrix);
-       // mTriangle.draw(scratch);
+        //mTriangle.draw(mMVPMatrix);
+        mTriangle.draw(scratch);
     }
 
     @Override

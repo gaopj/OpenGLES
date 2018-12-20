@@ -8,20 +8,20 @@ import java.nio.FloatBuffer;
 
 public class Triangle {
 
-    private final String vertexShaderCode =
-            "attribute vec4 vPosition;" +
-                    "void main() {" +
-                    "  gl_Position = vPosition;" +
-                    "}";
-
 //    private final String vertexShaderCode =
-//            //此矩阵成员变量提供了一个钩子来操纵使用此顶点着色器的对象的坐标
-//                    "uniform mat4 uMVPMatrix;" +
-//                    "attribute vec4 vPosition;" +
+//            "attribute vec4 vPosition;" +
 //                    "void main() {" +
-//                    // uMVPMatrix因子必须在*前面才能使矩阵乘法乘积正确。
-//                    "  gl_Position = uMVPMatrix * vPosition;" +
+//                    "  gl_Position = vPosition;" +
 //                    "}";
+
+    private final String vertexShaderCode =
+            //此矩阵成员变量提供了一个钩子来操纵使用此顶点着色器的对象的坐标
+            "uniform mat4 uMVPMatrix;" +
+                    "attribute vec4 vPosition;" +
+                    "void main() {" +
+                    // uMVPMatrix因子必须在*前面才能使矩阵乘法乘积正确。
+                    "  gl_Position = uMVPMatrix * vPosition;" +
+                    "}";
 
     private final String fragmentShaderCode =
                     "precision mediump float;" +
@@ -63,10 +63,12 @@ public class Triangle {
         // 设置缓冲区开始读取位置，这边设置为从头开始读取
         vertexBuffer.position(0);
 
+
         int vertexShader = MyGLRenderer.loadShader(GLES20.GL_VERTEX_SHADER,
                 vertexShaderCode);
         int fragmentShader = MyGLRenderer.loadShader(GLES20.GL_FRAGMENT_SHADER,
                 fragmentShaderCode);
+
 
         // 创建一个空的OpenGL ES 程序
         mProgram = GLES20.glCreateProgram();
@@ -79,6 +81,8 @@ public class Triangle {
 
         // 编译链接OpenGL ES程序
         GLES20.glLinkProgram(mProgram);
+
+
     }
 
     private int mPositionHandle;
@@ -112,10 +116,11 @@ public class Triangle {
         mMVPMatrixHandle = GLES20.glGetUniformLocation(mProgram, "uMVPMatrix");
 
         // 将模型视图投影矩阵传递给着色器
-        //GLES20.glUniformMatrix4fv(mMVPMatrixHandle, 1, false, mvpMatrix, 0);
+        GLES20.glUniformMatrix4fv(mMVPMatrixHandle, 1, false, mvpMatrix, 0);
 
         // 绘制三角形
         GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, vertexCount);
+
 
         // 禁用顶点数组
         GLES20.glDisableVertexAttribArray(mPositionHandle);
