@@ -1,4 +1,4 @@
-package gpj.com.hellotriangle
+package gpj.com.shaders
 
 import android.content.Context
 import android.opengl.GLSurfaceView
@@ -9,10 +9,10 @@ internal class MyGLSurfaceView(context: Context) : GLSurfaceView(context) {
 
     init {
 
-        // 创建一个OpenGL ES 3.0 的context
+        // 创建一个OpenGL ES 2.0 的context
         setEGLContextClientVersion(3)
 
-        mRenderer = MyGLRenderer()
+        mRenderer = MyGLRenderer(this)
 
         // 设置渲染器（Renderer）以在GLSurfaceView上绘制
         setRenderer(mRenderer)
