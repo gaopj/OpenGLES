@@ -4,7 +4,7 @@ import android.opengl.GLSurfaceView
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 
-const val TAG = "OpenGLES20"
+const val TAG = "OpenGLES30"
 
 class MainActivity : AppCompatActivity() {
 

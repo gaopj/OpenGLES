@@ -13,11 +13,11 @@ class Triangle {
 
 //    private val vertexShaderCode =
 //            "#version 300 es \n" +
-//                    "out vec4 vertexColor;" +
+//                    "out vec4 ourColor;" +
 //                    " layout (location = 0) in vec3 aPos;" +
 //                    "void main() {" +
 //                    " gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);" +
-//                    " vertexColor = vec4(0.5, 0.4, 0.3, 1.0);" +
+//                    " ourColor = vec4(0.5, 0.2, 0.1, 1.0);" +
 //                    "}"
 
     private val vertexShaderCode =
@@ -30,19 +30,19 @@ class Triangle {
                     " ourColor = aColor;" +
                     "}"
 
-//    private val fragmentShaderCode = (
+//    private val fragmentShaderCode =
 //            "#version 300 es \n " +
 //                    "#ifdef GL_ES\n"+
 //                    "precision mediump float;\n"+
 //                    "#endif\n"+
 //                    "out vec4 FragColor; " +
-//                    // "in vec4 vertexColor; " +
-//                    "uniform vec4 outColor; " +
+//                     //"in vec4 ourColor; " +
+//                    "uniform vec4 ourColor; " +
 //                    "void main() {" +
-//                    "  FragColor = outColor ;" +
-//                    "}")
+//                    "  FragColor = ourColor ;" +
+//                    "}"
 
-    private val fragmentShaderCode = (
+    private val fragmentShaderCode =
             "#version 300 es \n " +
                     "#ifdef GL_ES\n" +
                     "precision highp float;\n" +
@@ -51,29 +51,29 @@ class Triangle {
                     "in vec3 ourColor; " +
                     "void main() {" +
                     "  FragColor = vec4(ourColor, 1.0) ;" +
-                    "}")
+                    "}"
 
 
     private val mProgram: Int
 
-    private val VBO: IntBuffer
-    private val VAO: IntBuffer
-    private val EBO: IntBuffer
+    private val VBOids: IntBuffer
+    private val VAOids: IntBuffer
+    private val EBOids: IntBuffer
 
     init {
         var maxVertexAttribute = IntBuffer.allocate(1);
         GLES30.glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, maxVertexAttribute);
         Log.d(TAG, "maxVertexAttribute:" + maxVertexAttribute.get(0))
 
-        VBO = IntBuffer.allocate(1);
-        GLES30.glGenBuffers(1, VBO)
-        Log.d(TAG, "VBO:" + VBO.get(0))
+        VBOids = IntBuffer.allocate(1);
+        GLES30.glGenBuffers(1, VBOids)
+        Log.d(TAG, "VBO:" + VBOids.get(0))
 
-        VAO = IntBuffer.allocate(1);
-        GLES30.glGenBuffers(1, VAO)
+        VAOids = IntBuffer.allocate(1);
+        GLES30.glGenBuffers(1, VAOids)
 
-        EBO = IntBuffer.allocate(1);
-        GLES30.glGenBuffers(1, EBO)
+        EBOids = IntBuffer.allocate(1);
+        GLES30.glGenBuffers(1, EBOids)
 
 
         var vertexShader = MyGLRenderer.loadShader(GLES30.GL_VERTEX_SHADER,
@@ -120,12 +120,12 @@ class Triangle {
         GLES30.glDeleteShader(vertexShader);
         GLES30.glDeleteShader(fragmentShader);
 
-        GLES30.glBindVertexArray(VAO.get(0))
+        GLES30.glBindVertexArray(VAOids.get(0))
 
-        GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, VBO.get(0))
+        GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, VBOids.get(0))
 //        GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER,
-//                squareCoords.size * 4,
-//                FloatBuffer.wrap(squareCoords)
+//                coords.size * 4,
+//                FloatBuffer.wrap(coords)
 //                , GLES30.GL_STATIC_DRAW)
 
         GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER,
@@ -133,7 +133,7 @@ class Triangle {
                 FloatBuffer.wrap(vertices)
                 , GLES30.GL_STATIC_DRAW)
 
-        GLES30.glBindBuffer(GLES30.GL_ELEMENT_ARRAY_BUFFER, EBO.get(0))
+        GLES30.glBindBuffer(GLES30.GL_ELEMENT_ARRAY_BUFFER, EBOids.get(0))
         GLES30.glBufferData(GLES30.GL_ELEMENT_ARRAY_BUFFER,
                 indices.size * 4,
                 IntBuffer.wrap(indices)
@@ -168,10 +168,10 @@ class Triangle {
         // 将程序添加到OpenGL ES环境
         GLES30.glUseProgram(mProgram)
 
-//        val vertexColorLocation = GLES30.glGetUniformLocation(mProgram, "outColor")
-//        Log.d(TAG, "vertexColorLocation:" + vertexColorLocation)
-        GLES30.glBindVertexArray(VAO.get(0))
-   //     GLES30.glUniform4f(vertexColorLocation, 0.0f, greenValue.toFloat(), 0.0f, 1.0f);
+       // val vertexColorLocation = GLES30.glGetUniformLocation(mProgram, "ourColor")
+        //Log.d(TAG, "vertexColorLocation:" + vertexColorLocation)
+        GLES30.glBindVertexArray(VAOids.get(0))
+       // GLES30.glUniform4f(vertexColorLocation, 0.0f, greenValue.toFloat(), 0.0f, 1.0f);
 
         // 绘制三角形
         //GLES30.glDrawArrays(GLES30.GL_TRIANGLES, 0, 3)
@@ -189,11 +189,11 @@ class Triangle {
         //internal val COORDS_PER_VERTEX = 3
         internal val COORDS_PER_VERTEX = 6
         internal val vertexStride = COORDS_PER_VERTEX * 4
-//        internal var triangleCoords = floatArrayOf(// 按逆时针顺序
-//                0.0f, 0.622008459f, 0.0f, // 上
-//                -0.5f, -0.311004243f, 0.0f, // 左下
-//                0.5f, -0.311004243f, 0.0f  // 右下
-//        )
+        internal var coords = floatArrayOf(// 按逆时针顺序
+                0.5f, -0.5f, 0.0f, // 右下
+                -0.5f, -0.5f, 0.0f, // 左下
+                0.0f,  0.5f, 0.0f  // 顶部
+        )
 
         internal var squareCoords = floatArrayOf(// 按逆时针顺序
                 0.5f, 0.5f, 0.0f,   // 右上角
