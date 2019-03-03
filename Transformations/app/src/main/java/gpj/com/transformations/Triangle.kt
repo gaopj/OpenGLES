@@ -1,4 +1,4 @@
-package gpj.com.textures
+package gpj.com.transformations
 
 
 import android.content.Context
@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.opengl.GLES20.GL_MAX_VERTEX_ATTRIBS
 import android.opengl.GLES30
+import android.opengl.Matrix
 import android.util.Log
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer
@@ -26,8 +27,10 @@ class Triangle(context: Context) {
                     "out vec3 ourColor;" +
                     "out vec2 TexCoord;" +
 
+                    "uniform mat4 transform;" +
+
                     "void main() {" +
-                    " gl_Position = vec4(aPos, 1.0);" +
+                    " gl_Position = transform * vec4(aPos, 1.0);" +
                     " ourColor = aColor;" +
                     " TexCoord = aTexCoord;" +
                     "}"
@@ -51,8 +54,8 @@ class Triangle(context: Context) {
                     "void main() {" +
                     // "  FragColor = vec4(ourColor, 1.0) ;" +
                     //"  FragColor =texture(ourTexture, TexCoord) ;" +
-                   // " FragColor =  texture(texture1, TexCoord)*vec4(ourColor, 1.0);" +
-                     " FragColor = mix(texture(texture1, TexCoord), texture(texture2, TexCoord), 0.2);\n" +
+                    // " FragColor =  texture(ourTexture, TexCoord)*vec4(ourColor, 1.0);" +
+                    " FragColor = mix(texture(texture1, TexCoord), texture(texture2, TexCoord), 0.2);\n" +
                     "}")
 
 
@@ -63,6 +66,13 @@ class Triangle(context: Context) {
     private val EBOids: IntBuffer
 
     private val textureIds: IntBuffer
+
+    private val mTransMatrix = FloatArray(16)
+    private val mTransformationMatrix = FloatArray(16)
+    private val mMatrix = FloatArray(16)
+
+
+    private var mAngle: Float = 0.toFloat()
 
     init {
         mContext = context.applicationContext
@@ -145,7 +155,7 @@ class Triangle(context: Context) {
         val options: BitmapFactory.Options = BitmapFactory.Options()
         options.inPreferredConfig = Bitmap.Config.RGB_565
         options.inSampleSize = 16
-        val bitmap: Bitmap = BitmapFactory.decodeResource(mContext.resources, R.drawable.wall ,options)
+        val bitmap: Bitmap = BitmapFactory.decodeResource(mContext.resources, R.drawable.wall, options)
         val buf = ByteBuffer.allocate(bitmap.byteCount)
         bitmap.copyPixelsToBuffer(buf)
         buf.flip()
@@ -164,12 +174,12 @@ class Triangle(context: Context) {
         val options2: BitmapFactory.Options = BitmapFactory.Options()
         options2.inPreferredConfig = Bitmap.Config.RGB_565
         options2.inSampleSize = 1
-        val bitmap2: Bitmap = BitmapFactory.decodeResource(mContext.resources, R.drawable.android ,options2)
+        val bitmap2: Bitmap = BitmapFactory.decodeResource(mContext.resources, R.drawable.android, options2)
         val buf2 = ByteBuffer.allocate(bitmap2.byteCount)
         bitmap2.copyPixelsToBuffer(buf2)
         buf2.flip()
 
-        Log.d(TAG," bitmap2.width:"+ bitmap2.width+", bitmap2.height:"+ bitmap2.height)
+        Log.d(TAG, " bitmap2.width:" + bitmap2.width + ", bitmap2.height:" + bitmap2.height)
         GLES30.glTexImage2D(GLES30.GL_TEXTURE_2D, 0, GLES30.GL_RGB,
                 bitmap2.width, bitmap2.height, 0, GLES30.GL_RGB, GLES30.GL_UNSIGNED_SHORT_5_6_5,
                 buf2)
@@ -195,24 +205,52 @@ class Triangle(context: Context) {
                 false,
                 vertexStride, 6 * 4)
 
+
+
+        mAngle = 90f
+
+        Matrix.setIdentityM(mTransMatrix, 0);
+        Matrix.scaleM(mTransMatrix,0,2f,0.5f,1f)
+        Matrix.rotateM(mTransMatrix, 0, mAngle, 0f, 0f, 1.0f)
+        Matrix.translateM(mTransMatrix, 0, 0.5f, 0.5f, 0f)
+
+
+
+
+        for (i in 0..3) {
+            val j = i*4
+            Log.d(TAG, ""+i+"-->" + mTransMatrix[j]
+                    +"," +mTransMatrix[j+1]
+                    +"," +mTransMatrix[j+2]
+                    +"," +mTransMatrix[j+3]
+            )
+
+        }
+
+
+      //  Matrix.multiplyMM(scratch, 0, mMVPMatrix, 0, mRotationMatrix, 0)
+
+
     }
 
     fun draw() {
 
-        GLES30.glEnableVertexAttribArray(0)
-        GLES30.glEnableVertexAttribArray(1)
-        GLES30.glEnableVertexAttribArray(2)
+        GLES30.glEnableVertexAttribArray(0);
+        GLES30.glEnableVertexAttribArray(1);
+        GLES30.glEnableVertexAttribArray(2);
 
         // 将程序添加到OpenGL ES环境
         GLES30.glUseProgram(mProgram)
 
-  //      GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, textureIds.get(0))
+        // GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, textureIds.get(0));
         GLES30.glActiveTexture(GLES30.GL_TEXTURE0)
         GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, textureIds.get(0))
         GLES30.glUniform1i(GLES30.glGetUniformLocation(mProgram, "texture1"), 0)
         GLES30.glActiveTexture(GLES30.GL_TEXTURE1)
         GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, textureIds.get(1))
         GLES30.glUniform1i(GLES30.glGetUniformLocation(mProgram, "texture2"), 1)
+        val transformLoc = GLES30.glGetUniformLocation(mProgram, "transform")
+        GLES30.glUniformMatrix4fv(transformLoc, 1, false, mTransMatrix, 0)
 
 
 //        val vertexColorLocation = GLES30.glGetUniformLocation(mProgram, "outColor")
