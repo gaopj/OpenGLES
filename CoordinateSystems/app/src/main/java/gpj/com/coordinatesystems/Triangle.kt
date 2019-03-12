@@ -1,4 +1,4 @@
-package gpj.com.transformations
+package gpj.com.coordinatesystems
 
 
 import android.content.Context
@@ -27,10 +27,12 @@ class Triangle(context: Context) {
                     "out vec3 ourColor;" +
                     "out vec2 TexCoord;" +
 
-                    "uniform mat4 transform;" +
+                    "uniform mat4 model;" +
+                    "uniform mat4 view;" +
+                    "uniform mat4 projection;" +
 
                     "void main() {" +
-                    " gl_Position = transform * vec4(aPos, 1.0);" +
+                    " gl_Position = projection * view * model * vec4(aPos, 1.0);" +
                     " ourColor = aColor;" +
                     " TexCoord = aTexCoord;" +
                     "}"
@@ -67,7 +69,10 @@ class Triangle(context: Context) {
 
     private val textureIds: IntBuffer
 
-    private val mTransMatrix = FloatArray(16)
+    private val mModelMatrix = FloatArray(16)
+    private val mViewMatrix = FloatArray(16)
+    private val mProjectionMatrix = FloatArray(16)
+
 
     private var mAngle: Float = 0.toFloat()
 
@@ -136,12 +141,17 @@ class Triangle(context: Context) {
                 vertices.size * 4,
                 FloatBuffer.wrap(vertices)
                 , GLES30.GL_STATIC_DRAW)
-
-        GLES30.glBindBuffer(GLES30.GL_ELEMENT_ARRAY_BUFFER, EBOids.get(0))
-        GLES30.glBufferData(GLES30.GL_ELEMENT_ARRAY_BUFFER,
-                indices.size * 4,
-                IntBuffer.wrap(indices)
+        GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER,
+                vertices3D.size * 4,
+                FloatBuffer.wrap(vertices3D)
                 , GLES30.GL_STATIC_DRAW)
+
+
+//        GLES30.glBindBuffer(GLES30.GL_ELEMENT_ARRAY_BUFFER, EBOids.get(0))
+//        GLES30.glBufferData(GLES30.GL_ELEMENT_ARRAY_BUFFER,
+//                indices.size * 4,
+//                IntBuffer.wrap(indices)
+//                , GLES30.GL_STATIC_DRAW)
 
         GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, textureIds.get(0))
         // 为当前绑定的纹理对象设置环绕、过滤方式
@@ -200,25 +210,16 @@ class Triangle(context: Context) {
                 2,
                 GLES30.GL_FLOAT,
                 false,
-                vertexStride, 6 * 4)
+                vertexStride, 3 * 4)
 
 
-
-        mAngle = -90f
-
-        Matrix.setIdentityM(mTransMatrix, 0)
-        Matrix.scaleM(mTransMatrix,0,2f,0.5f,1f)
-        Matrix.rotateM(mTransMatrix, 0, mAngle, 0f, 0f, 1.0f)
-       // Matrix.translateM(mTransMatrix, 0, 0f, 0f, -3f)
-
-
-
-      //  Matrix.multiplyMM(scratch, 0, mMVPMatrix, 0, mRotationMatrix, 0)
-
+        GLES30.glEnable(GLES30.GL_DEPTH_TEST);
 
     }
 
     fun draw() {
+        GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT or GLES30.GL_DEPTH_BUFFER_BIT)
+
 
         GLES30.glEnableVertexAttribArray(0);
         GLES30.glEnableVertexAttribArray(1);
@@ -227,23 +228,49 @@ class Triangle(context: Context) {
         // 将程序添加到OpenGL ES环境
         GLES30.glUseProgram(mProgram)
 
-        // GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, textureIds.get(0));
         GLES30.glActiveTexture(GLES30.GL_TEXTURE0)
         GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, textureIds.get(0))
         GLES30.glUniform1i(GLES30.glGetUniformLocation(mProgram, "texture1"), 0)
         GLES30.glActiveTexture(GLES30.GL_TEXTURE1)
         GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, textureIds.get(1))
         GLES30.glUniform1i(GLES30.glGetUniformLocation(mProgram, "texture2"), 1)
-        val transformLoc = GLES30.glGetUniformLocation(mProgram, "transform")
-        GLES30.glUniformMatrix4fv(transformLoc, 1, false, mTransMatrix, 0)
+        for (i in 0..3) {
+
+            Matrix.setIdentityM(mModelMatrix, 0)
+            mAngle = 5.0f * ((System.currentTimeMillis() / 200) % 60)
+            Matrix.rotateM(mModelMatrix, 0, mAngle,
+                    cubePosition[i * 3] + 0.5f,
+                    cubePosition[i * 3 + 1] + 1.0f,
+                    cubePosition[i * 3 + 2])
+            // Matrix.rotateM(mModelMatrix, 0, -55f, 1.0f, 0.0f, 0f)
+
+            Matrix.setIdentityM(mViewMatrix, 0)
+            Matrix.translateM(mViewMatrix, 0,
+                    cubePosition[i * 3],
+                    cubePosition[i * 3 + 1],
+                    cubePosition[i * 3 + 2] - 4f)
+
+            val displayMetrics = mContext.resources.displayMetrics
+            Matrix.setIdentityM(mProjectionMatrix, 0)
+            Matrix.perspectiveM(mProjectionMatrix,
+                    0,
+                    45f,
+                    displayMetrics.widthPixels * 1.0f / displayMetrics.heightPixels,
+                    0.1f,
+                    100f)
+            val modelLoc = GLES30.glGetUniformLocation(mProgram, "model")
+            GLES30.glUniformMatrix4fv(modelLoc, 1, false, mModelMatrix, 0)
+            val viewLoc = GLES30.glGetUniformLocation(mProgram, "view")
+            GLES30.glUniformMatrix4fv(viewLoc, 1, false, mViewMatrix, 0)
+            val projectionLoc = GLES30.glGetUniformLocation(mProgram, "projection")
+            GLES30.glUniformMatrix4fv(projectionLoc, 1, false, mProjectionMatrix, 0)
 
 
 //        val vertexColorLocation = GLES30.glGetUniformLocation(mProgram, "outColor")
-        GLES30.glBindVertexArray(VAOids.get(0))
+            GLES30.glBindVertexArray(VAOids.get(0))
 
-        //GLES30.glDrawArrays(GLES30.GL_TRIANGLES, 0, 3)
-        GLES30.glDrawElements(GLES30.GL_TRIANGLES, 6, GLES30.GL_UNSIGNED_INT, 0);
-
+            GLES30.glDrawArrays(GLES30.GL_TRIANGLES, 0, 36)
+        }
 
         // 禁用顶点
         GLES30.glDisableVertexAttribArray(0)
@@ -254,7 +281,7 @@ class Triangle(context: Context) {
     companion object {
 
         // 此数组中每个顶点的维度
-        internal val COORDS_PER_VERTEX = 8
+        internal val COORDS_PER_VERTEX = 5
         internal val vertexStride = COORDS_PER_VERTEX * 4
 
 
@@ -264,19 +291,71 @@ class Triangle(context: Context) {
                 // 0, 1, 2
         )
 
-//        internal var vertices = floatArrayOf(// 按逆时针顺序
-//                // 位置              // 颜色
-//                0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,   // 右下
-//                -0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,   // 左下
-//                0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f    // 顶部
-//        )
 
         var vertices = floatArrayOf(
-                //     ---- 位置 ----       ---- 颜色 ----     - 纹理坐标 -
-                0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1f, 0f, // 右上
-                0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1f, 1f, // 右下
-                -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0f, 1f, // 左下
-                -0.5f, 0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 0f, 0f    // 左上
+                //     ---- 位置 ----       - 纹理坐标 -
+                //0.5f, 0.5f, 0.0f, 1f, 0f, // 右上
+                // 0.5f, -0.5f, 0.0f, 1f, 1f, // 右下
+                // -0.5f, -0.5f, 0.0f, 0f, 1f, // 左下
+                //  -0.5f, 0.5f, 0.0f, 0f, 0f    // 左上
+
+                0.5f, 0.5f, 0.0f, 1f, 0f, // 右上
+                0.5f, -0.5f, 0.0f, 1f, 1f, // 右下
+                -0.5f, 0.5f, 0.0f, 0f, 0f,    // 左上
+                0.5f, -0.5f, 0.0f, 1f, 1f, // 右下
+                -0.5f, -0.5f, 0.0f, 0f, 1f, // 左下
+                -0.5f, 0.5f, 0.0f, 0f, 0f    // 左上
+
+
         )
+
+        var vertices3D = floatArrayOf(
+                // ---- 位置 ----     - 纹理坐标 -
+                -0.5f, -0.5f, -0.5f, 0f, 0f,
+                0.5f, -0.5f, -0.5f, 1f, 0f,
+                0.5f, 0.5f, -0.5f, 1f, 1f,
+                0.5f, 0.5f, -0.5f, 1f, 1f,
+                -0.5f, 0.5f, -0.5f, 0f, 1f,
+                -0.5f, -0.5f, -0.5f, 0f, 0f,
+
+                -0.5f, -0.5f, 0.5f, 0f, 1f,
+                0.5f, -0.5f, 0.5f, 1f, 1f,
+                0.5f, 0.5f, 0.5f, 1f, 0f,
+                0.5f, 0.5f, 0.5f, 1f, 0f,
+                -0.5f, 0.5f, 0.5f, 0f, 0f,
+                -0.5f, -0.5f, 0.5f, 0f, 1f,
+
+                -0.5f, 0.5f, 0.5f, 1f, 00f,
+                -0.5f, 0.5f, -0.5f, 1f, 1f,
+                -0.5f, -0.5f, -0.5f, 0f, 1f,
+                -0.5f, -0.5f, -0.5f, 0f, 1f,
+                -0.5f, -0.5f, 0.5f, 0f, 0f,
+                -0.5f, 0.5f, 0.5f, 1f, 0f,
+
+                0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
+                0.5f, 0.5f, -0.5f, 1.0f, 1.0f,
+                0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
+                0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
+                0.5f, -0.5f, 0.5f, 0.0f, 0.0f,
+                0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
+
+                -0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
+                0.5f, -0.5f, -0.5f, 1.0f, 1.0f,
+                0.5f, -0.5f, 0.5f, 1.0f, 0.0f,
+                0.5f, -0.5f, 0.5f, 1.0f, 0.0f,
+                -0.5f, -0.5f, 0.5f, 0.0f, 0.0f,
+                -0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
+
+                -0.5f, 0.5f, -0.5f, 0.0f, 1.0f,
+                0.5f, 0.5f, -0.5f, 1.0f, 1.0f,
+                0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
+                0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
+                -0.5f, 0.5f, 0.5f, 0.0f, 0.0f,
+                -0.5f, 0.5f, -0.5f, 0.0f, 1.0f)
+        var cubePosition = floatArrayOf(
+                0.0f, 0.0f, 0.0f,
+                0.9f, 1.3f, 0.4f,
+                -0.5f, -1.2f, -1.5f,
+                -1.8f, -1.0f, -2.3f)
     }
 }
